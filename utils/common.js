@@ -2,7 +2,7 @@ const fs = require('fs');
 const moment = require('moment');
 
 let deleteImagen = (pathFoto) => {
-    const path = __dirname + './../uploads/images/' + pathFoto;
+    const path = './../uploads/images/' + pathFoto;
     if (fs.existsSync(path)) {
         fs.unlinkSync(path);
     }
@@ -28,4 +28,9 @@ let checkErrors = (err, res) => {
              error: 'Error introduciendo los datos'
         });
     }
+}
+
+module.exports = {
+    deleteImagen,
+    checkErrors
 }

@@ -24,6 +24,7 @@ router.post('/register', async (req, res) => {
                 resultado: x
             });
         }).catch(err => {
+            console.log(err)
             commons.deleteImagen('usuarios/' + pathFoto);
             commons.checkErrors(err, res);
         });
@@ -39,21 +40,16 @@ router.post('/login', (req, res) => {
     Usuario.findOne({
         email: req.body.email
     }).then(x => {
-        if (x) {
-            bcrypt.desincriptar(req.body.password, x.password).then(bool => {
-                if (bool === true) {
-                    res.status(200).send({
-                        token: token.generarToken(x)
-                    });
-                } else {
-                    res.status(401).send({
-                        error: 'Contraseña incorrecta'
-                    });
-                }
+        if (x && req.body.password === x.password) {
+
+            res.status(200).send({
+                token: token.generarToken(x)
             });
+
+
         } else {
             res.status(401).send({
-                error: 'No se ha encontrado el usuario con el email: ' + req.body.email
+                error: 'Emeail o constraseña incorrecta'
             });
         }
 
@@ -81,13 +77,13 @@ router.get('/validate', async (req, res) => {
 });
 
 router.post('/validate/password', async (req, res) => {
-    try{
+    try {
         const result = await bcrypt.desincriptar(req.body.password_check, req.body.password);
-        res.send({resultado : result})
-    }catch(err){
+        res.send({ resultado: result })
+    } catch (err) {
         res.status(500).send();
     }
-    
+
 })
 
 module.exports = router;
