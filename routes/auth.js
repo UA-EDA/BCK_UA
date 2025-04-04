@@ -49,7 +49,7 @@ router.post('/login', (req, res) => {
 
         } else {
             res.status(401).send({
-                error: 'Emeail o constraseña incorrecta'
+                error: 'Email o constraseña incorrecta'
             });
         }
 
