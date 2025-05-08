@@ -118,14 +118,32 @@ router.get('/filtro/:categoria', (req, res) => {
 
     try {
 
-        Asset.find({ categorias: req.params['categoria'] }).exec().populate('autor').then(x => {
-            res.send({ resultado: x });
-        }).catch(err => {
-            console.log(err);
-            res.status(500).send({
-                error: 'No se han podido obtener los datos'
-            });
-        });;
+        const cat = req.params.categoria;
+
+        Asset.find({
+          $or: [
+            // Coincidencia exacta en el array o campo 'categorias'
+            { categorias: cat },
+        
+            // Coincidencia exacta (o parcial con regex) en 'nombre'
+            // Para búsqueda exacta:
+            // { nombre: cat }
+        
+            // O para buscar que contenga la cadena (case-insensitive):
+            { nombre: { $regex: cat, $options: 'i' } },
+        
+            // Ídem para 'tipo'
+            { tipo: { $regex: cat, $options: 'i' } }
+          ]
+        })
+        .populate('autor')
+        .then(results => {
+          res.send({ resultado: results });
+        })
+        .catch(err => {
+          console.error(err);
+          res.status(500).send({ error: 'No se han podido obtener los datos' });
+        });
 
     } catch (err) {
         console.error(err);
@@ -145,7 +163,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.get('/:nombre', (req, res) => {
-    Asset.find({ categorias: req.params['nombre'] }).exec().populate('autor').then(x => {
+    Asset.find({ categorias: req.params['nombre'] }).populate('autor').then(x => {
         res.send({ resultado: x });
     }).catch(err => {
         console.log(err);
