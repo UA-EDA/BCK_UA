@@ -5,6 +5,7 @@ const logger = require('morgan');
 
 //Enrutadores
 const auth = require(__dirname + '/routes/auth');
+const asset = require(__dirname + '/routes/asset');
 
 mongoose.connect('mongodb+srv://admin:UA.2025@cluster0.8pf4i7b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/bck-UA');
 
@@ -28,7 +29,7 @@ app.use(express.json({ limit: '25mb' }));
 
 app.use(express.urlencoded({ limit: '25mb' }));
 app.use('/auth', auth);
-
+app.use('/asset', asset);
 
 
 

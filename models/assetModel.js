@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const UsuarioSchema = require('./usuario');
+
 const ComentarioSchema = require('./comentarioModel');
 
 let AssetSchema = new mongoose.Schema({
@@ -29,7 +29,7 @@ let AssetSchema = new mongoose.Schema({
     tipo: {
         require: true,
         type: String,
-        enum: ['3D', '2D', 'AUDIO', 'VIDEO', 'SCRIPT'],
+        enum: ['3D', '2D', 'AUDIO', 'VIDEO', 'SCRIPT', 'IMAGE'],
         default: 'USER'
     },
 
@@ -46,7 +46,8 @@ let AssetSchema = new mongoose.Schema({
 
     autor: {
         require: true,
-        type: UsuarioSchema
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuarios'
     },
 
     comentarios: {
