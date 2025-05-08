@@ -43,7 +43,8 @@ router.post('/login', (req, res) => {
         if (x && req.body.password === x.password) {
 
             res.status(200).send({
-                token: token.generarToken(x)
+                token: token.generarToken(x),
+                nombre: x.nombre_completo
             });
 
 
