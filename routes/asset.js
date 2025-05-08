@@ -47,6 +47,8 @@ router.post('/subir', auth, async (req, res) => {
     let pathFoto = `http://${req.hostname}:8080/assets/`;
 
     pathFoto += upload.storage(req.body.asset, 'assets');
+
+    let pathFotoPort = `http://${req.hostname}:8080/portadas/${upload.storage(req.body.portada, 'portadas')}`;
     console.log(req.user.id)
 
     let newAsset = new Asset({
@@ -56,6 +58,7 @@ router.post('/subir', auth, async (req, res) => {
         categorias: req.body.categorias,
         tipo: req.body.tipo,
         fecha_alta: new Date(),
+        portada: pathFotoPort,
         autor: new mongoose.Types.ObjectId(req.user.id)
     });
 

@@ -15,6 +15,12 @@ let AssetSchema = new mongoose.Schema({
         trim: true
     },
 
+    portada: {
+        require: true,
+        type: String,
+        trim: true
+    },
+
     categorias: {
         type: [String],
         require: true,
