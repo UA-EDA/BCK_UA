@@ -156,5 +156,20 @@ router.get('/:nombre', (req, res) => {
 });
 
 
+router.get('/', (req, res) => {
+
+    
+    Asset.find().populate('autor').then(x => {
+        res.send({ resultado: x });
+    }).catch(err => {
+        console.log(err);
+        res.status(500).send({
+            error: 'No se han podido obtener los datos'
+        });
+    });;
+
+
+});
+
 
 module.exports = router;

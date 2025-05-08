@@ -27,6 +27,8 @@ app.use(
 app.use(logger('dev'));
 app.use(express.json({ limit: '25mb' }));
 
+app.use(express.static(__dirname + '/uploads'));
+
 app.use(express.urlencoded({ limit: '25mb' }));
 app.use('/auth', auth);
 app.use('/asset', asset);
