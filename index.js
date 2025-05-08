@@ -6,7 +6,7 @@ const logger = require('morgan');
 //Enrutadores
 const auth = require(__dirname + '/routes/auth');
 
-mongoose.connect('mongodb://localhost:27017/bck-ua');
+mongoose.connect('mongodb+srv://admin:UA.2025@cluster0.8pf4i7b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/bck-UA');
 
 
 
