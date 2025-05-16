@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Asset = require(__dirname + './../models/assetModel');
+const Usuario = require(__dirname + './../models/usuario');
 const upload = require(__dirname + './../utils/uploadFile');
 const TokenHelper = require(__dirname + './../utils/token');
 
@@ -43,7 +44,7 @@ function auth(req, res, next) {
 
 router.post('/subir', auth, async (req, res) => {
 
-   
+
     let pathFoto = `http://${req.hostname}:8080/assets/`;
 
     pathFoto += upload.storage(req.body.asset, 'assets');
@@ -74,6 +75,66 @@ router.post('/subir', auth, async (req, res) => {
 
 
 });
+
+router.post('/like', auth, async (req, res) => {
+    const increment = req.body.isLiked ? 1 : -1;
+    Usuario.findById(req.user.id)
+        .then(user => {
+            if (!user) throw new Error('Usuario no encontrado');
+
+            // Obtener el valor en rated_assets[id], si no existe es undefined
+            const valor = user.rated_assets?.[req.body.id.toString()];
+
+            // Aquí puedes hacer lo que quieras con valor, o simplemente continuar
+            console.log('Valor en rated_assets:', valor);
+            if (valor != null) {
+                if (valor == true && increment == 1) {
+                    res.status(200).send({ resultado: "Ya ha valorado este asset positivamente" });
+                }
+                if (valor == false && increment == -1) {
+                    res.status(200).send({ resultado: "Ya ha valorado este asset negativamente" });
+                }
+            }
+        })
+        .catch(err => {
+            res.status(500).send({ error: err.message || "Error en la operación" });
+        });
+    Usuario.findByIdAndUpdate(
+        req.user.id,
+        { $set: { [`rated_assets.${req.body.id.toString()}`]: req.body.isLiked } },
+        { new: true }
+    )
+        .catch(err => {
+            res.status(500).send({ error: err.message || "No se pudo actualizar rated_assets" });
+        });
+
+    Asset.findByIdAndUpdate(
+        req.body.id,
+        { $inc: { likes: increment } },
+        { new: true }
+    )
+        .then(updatedAsset => {
+            res.status(200).send({ resultado: updatedAsset });
+        })
+        .catch(err => {
+            res.status(500).send({ error: "No se ha podido actualizar el campo 'likes'" });
+        });
+});
+
+router.post('/increment-download', auth, async (req, res) => {
+    Asset.findByIdAndUpdate(
+        req.body.id,
+        { $inc: { num_descargas: 1 } },
+        { new: true }
+    )
+        .then(updatedAsset => {
+            res.status(200).send({ resultado: updatedAsset });
+        })
+        .catch(() => {
+            res.status(500).send({ error: "No se pudo incrementar el número de descargas" });
+        });
+});
+
 
 router.get('/populares', (req, res) => {
 
@@ -124,29 +185,29 @@ router.get('/filtro/:categoria', (req, res) => {
         const cat = req.params.categoria;
 
         Asset.find({
-          $or: [
-            // Coincidencia exacta en el array o campo 'categorias'
-            { categorias: cat },
-        
-            // Coincidencia exacta (o parcial con regex) en 'nombre'
-            // Para búsqueda exacta:
-            // { nombre: cat }
-        
-            // O para buscar que contenga la cadena (case-insensitive):
-            { nombre: { $regex: cat, $options: 'i' } },
-        
-            // Ídem para 'tipo'
-            { tipo: { $regex: cat, $options: 'i' } }
-          ]
+            $or: [
+                // Coincidencia exacta en el array o campo 'categorias'
+                { categorias: cat },
+
+                // Coincidencia exacta (o parcial con regex) en 'nombre'
+                // Para búsqueda exacta:
+                // { nombre: cat }
+
+                // O para buscar que contenga la cadena (case-insensitive):
+                { nombre: { $regex: cat, $options: 'i' } },
+
+                // Ídem para 'tipo'
+                { tipo: { $regex: cat, $options: 'i' } }
+            ]
         })
-        .populate('autor')
-        .then(results => {
-          res.send({ resultado: results });
-        })
-        .catch(err => {
-          console.error(err);
-          res.status(500).send({ error: 'No se han podido obtener los datos' });
-        });
+            .populate('autor')
+            .then(results => {
+                res.send({ resultado: results });
+            })
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({ error: 'No se han podido obtener los datos' });
+            });
 
     } catch (err) {
         console.error(err);
@@ -179,7 +240,7 @@ router.get('/:nombre', (req, res) => {
 
 router.get('/', (req, res) => {
 
-    
+
     Asset.find().populate('autor').then(x => {
         res.send({ resultado: x });
     }).catch(err => {
