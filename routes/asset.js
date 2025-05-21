@@ -45,11 +45,11 @@ function auth(req, res, next) {
 router.post('/subir', auth, async (req, res) => {
 
 
-    let pathFoto = `http://${req.hostname}:8080/assets/`;
+    let pathFoto = `http://${req.hostname}/assets/`;
 
     pathFoto += upload.storage(req.body.asset, 'assets');
 
-    let pathFotoPort = `http://${req.hostname}:8080/portadas/${upload.storage(req.body.portada, 'portadas')}`;
+    let pathFotoPort = `http://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
     console.log(req.user.id)
 
     let newAsset = new Asset({
