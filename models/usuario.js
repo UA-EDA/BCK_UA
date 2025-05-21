@@ -35,7 +35,11 @@ let UsuarioSchema = new mongoose.Schema({
         enum: ['ADMIN', 'USER'],
         default: 'USER'
     },
-
+    rated_assets: {
+        type: Map,
+        of: Boolean,
+        default: {}
+    }
 
 });
 
