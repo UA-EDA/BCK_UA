@@ -16,7 +16,7 @@ let app = express();
 
 app.use(
     cors({
-        origin: "https://asset-lab.netlify.app", // Permite solo tu app de React
+        origin: ["https://asset-lab.netlify.app", "http://localhost:3000"], // Permite solo tu app de React
         methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
         allowedHeaders: ["Content-Type", "Authorization"], // Encabezados permitidos
         credentials: true, // Si usas cookies o autenticación con tokens
