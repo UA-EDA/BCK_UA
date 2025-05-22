@@ -42,27 +42,15 @@ function auth(req, res, next) {
         });
 }
 
-
-router.get('/mis-assets', auth, (req, res) => {
-    Asset.find({ autor: req.user.id}).populate('autor').then(x => {
-        res.send({ resultado: x });
-    }).catch(err => {
-        console.log(err);
-        res.status(500).send({
-            error: 'No se han podido obtener los datos'
-        });
-    });;
-});
-
 router.post('/subir', auth, async (req, res) => {
 
 
-    let pathFoto = `https://${req.hostname}/assets/`;
+    let pathFoto = `http://${req.hostname}/assets/`;
 
     pathFoto += upload.storage(req.body.asset, 'assets');
 
-    let pathFotoPort = `https://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
-    
+    let pathFotoPort = `http://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
+    console.log(req.user.id)
 
     let newAsset = new Asset({
         nombre: req.body.nombre,
@@ -87,50 +75,73 @@ router.post('/subir', auth, async (req, res) => {
 
 
 });
+router.get('/like', auth, async (req, res) => {
+    try {
+        const { assetId } = req.query;
+        console.log(req.query);
+        const user = await Usuario.findById(req.user.id);
+        if (!user) {
+            return res.status(404).send({ error: "Usuario no encontrado" });
+        }
+        const valor = user.rated_assets?.get ? user.rated_assets.get(assetId) : undefined;
+        return res.status(200).send({ resultado: valor});
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).send({ error: err.message || "Error en la operación" });
+    }
+});
 
 router.post('/like', auth, async (req, res) => {
-    const increment = req.body.isLiked ? 1 : -1;
-    Usuario.findById(req.user.id)
-        .then(user => {
-            if (!user) throw new Error('Usuario no encontrado');
+    try {
+        const increment = req.body.isLiked ? 1 : -1;
+        const assetId = req.body.id.toString();
 
-            // Obtener el valor en rated_assets[id], si no existe es undefined
-            const valor = user.rated_assets?.[req.body.id.toString()];
+        const user = await Usuario.findById(req.user.id);
+        if (!user) {
+            return res.status(404).send({ error: "Usuario no encontrado" });
+        }
 
-            // Aquí puedes hacer lo que quieras con valor, o simplemente continuar
-            console.log('Valor en rated_assets:', valor);
-            if (valor != null) {
-                if (valor == true && increment == 1) {
-                    res.status(200).send({ resultado: "Ya ha valorado este asset positivamente" });
-                }
-                if (valor == false && increment == -1) {
-                    res.status(200).send({ resultado: "Ya ha valorado este asset negativamente" });
-                }
+        const ratedAssets = user.rated_assets;
+
+        // Verifica si es un Map (como definiste en el esquema)
+        let valor = ratedAssets?.get ? ratedAssets.get(assetId) : undefined;
+
+        console.log("Valor en rated_assets:", ratedAssets);
+        console.log("Id state:", valor, ":", increment);
+
+        if (valor !== undefined) {
+            if (valor === true && increment === 1) {
+                valor = false;
             }
-        })
-        .catch(err => {
-            res.status(500).send({ error: err.message || "Error en la operación" });
-        });
-    Usuario.findByIdAndUpdate(
-        req.user.id,
-        { $set: { [`rated_assets.${req.body.id.toString()}`]: req.body.isLiked } },
-        { new: true }
-    )
-        .catch(err => {
-            res.status(500).send({ error: err.message || "No se pudo actualizar rated_assets" });
-        });
+            if (valor === false && increment === -1) {
+                valor = true;
+            }
+        }
 
-    Asset.findByIdAndUpdate(
-        req.body.id,
-        { $inc: { likes: increment } },
-        { new: true }
-    )
-        .then(updatedAsset => {
-            res.status(200).send({ resultado: updatedAsset });
-        })
-        .catch(err => {
-            res.status(500).send({ error: "No se ha podido actualizar el campo 'likes'" });
-        });
+        // Actualizar el usuario
+        await Usuario.findByIdAndUpdate(
+            req.user.id,
+            { $set: { [`rated_assets.${assetId}`]: req.body.isLiked } }
+        );
+
+        // Actualizar el asset
+        const updatedAsset = await Asset.findByIdAndUpdate(
+            assetId,
+            { $inc: { likes: increment } },
+            { new: true }
+        );
+
+        if (!updatedAsset) {
+            return res.status(404).send({ error: "Asset no encontrado" });
+        }
+
+        return res.status(200).send({ resultado: updatedAsset });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ error: err.message || "Error en la operación" });
+    }
 });
 
 router.post('/increment-download', auth, async (req, res) => {
@@ -229,7 +240,7 @@ router.get('/filtro/:categoria', (req, res) => {
 
 router.get('/:id', (req, res) => {
     Asset.findById(req.params['id']).populate('autor').then(x => {
-        res.status(200).send({ resultado: x });
+        res.status(200).send({ resultado: x })
 
     }).catch(err => {
         res.status(500).send({
@@ -264,7 +275,6 @@ router.get('/', (req, res) => {
 
 
 });
-
 
 
 module.exports = router;
