@@ -84,7 +84,7 @@ router.get('/like', auth, async (req, res) => {
             return res.status(404).send({ error: "Usuario no encontrado" });
         }
         const valor = user.rated_assets?.get ? user.rated_assets.get(assetId) : undefined;
-        return res.status(200).send({ resultado: valor});
+        return res.status(200).send({ resultado: valor });
     }
     catch (err) {
         console.error(err);
@@ -94,7 +94,8 @@ router.get('/like', auth, async (req, res) => {
 
 router.post('/like', auth, async (req, res) => {
     try {
-        const increment = req.body.isLiked ? 1 : -1;
+        let isLiked = req.body.isLiked;
+        let increment = isLiked ? 1 : -1;
         const assetId = req.body.id.toString();
 
         const user = await Usuario.findById(req.user.id);
@@ -108,22 +109,30 @@ router.post('/like', auth, async (req, res) => {
         let valor = ratedAssets?.get ? ratedAssets.get(assetId) : undefined;
 
         console.log("Valor en rated_assets:", ratedAssets);
-        console.log("Id state:", valor, ":", increment);
 
         if (valor !== undefined) {
-            if (valor === true && increment === 1) {
-                valor = false;
+            if (valor !== isLiked) {
+                increment *= 2;
             }
-            if (valor === false && increment === -1) {
-                valor = true;
+            if (valor === isLiked) {
+                increment *= -1;
+                isLiked = undefined;
             }
         }
+        console.log("Id state:", valor, ":", increment);
 
         // Actualizar el usuario
-        await Usuario.findByIdAndUpdate(
-            req.user.id,
-            { $set: { [`rated_assets.${assetId}`]: req.body.isLiked } }
-        );
+        if (isLiked === undefined) {
+            await Usuario.findByIdAndUpdate(
+                req.user.id,
+                { $unset: { [`rated_assets.${assetId}`]: "" } }
+            );
+        } else {
+            await Usuario.findByIdAndUpdate(
+                req.user.id,
+                { $set: { [`rated_assets.${assetId}`]: isLiked } }
+            );
+        }
 
         // Actualizar el asset
         const updatedAsset = await Asset.findByIdAndUpdate(
