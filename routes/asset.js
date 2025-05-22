@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const Comentario = require(__dirname + './../models/comentarioModel');
 const Asset = require(__dirname + './../models/assetModel');
 const Usuario = require(__dirname + './../models/usuario');
 const upload = require(__dirname + './../utils/uploadFile');
@@ -287,6 +288,135 @@ router.post('/borrar-asset', auth, async (req, res) => {
     }
 });
 
+router.get('/todos-comentarios/:id', async (req, res) => {
+    try {
+        const asset = await Asset.findById(req.params.id);
+
+        if (!asset) {
+            return res.status(404).json({ error: 'Asset no encontrado' });
+        }
+
+        const comentariosConNombre = await Promise.all(
+            asset.comentarios.map(async (comentario) => {
+                const autor = await Usuario.findById(comentario.autor).select('nombre_completo');
+                return {
+                    ...comentario.toObject(),
+                    autor: autor ? { _id: autor._id, nombre: autor.nombre_completo } : { _id: null, nombre: 'Anónimo' },
+                };
+            })
+        );
+        res.status(200).json({ resultado: comentariosConNombre });
+    } catch (error) {
+        console.error('Error al obtener comentarios con nombre:', error);
+        res.status(500).json({ error: 'Error al obtener comentarios.' });
+    }
+});
+
+
+// Crear un comentario nuevo dentro de un asset
+router.post('/comentario', auth, async (req, res) => {
+    try {
+        const { comentario, valoracion, assetId } = req.body;
+
+        if (!assetId) return res.status(400).json({ error: 'assetId es obligatorio' });
+        if (!comentario) return res.status(400).json({ error: 'comentario es obligatorio' });
+        if (valoracion == null) return res.status(400).json({ error: 'valoracion es obligatoria' });
+
+        const asset = await Asset.findById(assetId);
+        if (!asset) return res.status(404).json({ error: 'Asset no encontrado' });
+
+        const nuevoComentario = {
+            autor: req.user.id,
+            comentario,
+            valoracion
+        };
+
+        asset.comentarios.push(nuevoComentario);
+        await asset.save();
+
+        // Popular el autor del comentario recién añadido
+        await asset.populate(`comentarios.${asset.comentarios.length - 1}.autor`, 'nombre');
+
+        const comentarioGuardado = asset.comentarios[asset.comentarios.length - 1];
+        res.status(201).json(comentarioGuardado);
+    } catch (err) {
+        console.error('Error al crear comentario:', err);
+        res.status(500).json({ error: 'Error al crear el comentario' });
+    }
+});
+
+// Obtener un comentario específico (buscando dentro del asset)
+router.get('/comentario/:assetId/:comentarioId', async (req, res) => {
+    try {
+        const { assetId, comentarioId } = req.params;
+        const asset = await Asset.findById(assetId)
+            .populate('comentarios.autor', 'nombre');
+        if (!asset) return res.status(404).json({ error: 'Asset no encontrado' });
+
+        const comentario = asset.comentarios.id(comentarioId);
+        if (!comentario) return res.status(404).json({ error: 'Comentario no encontrado' });
+
+        res.status(200).json(comentario);
+    } catch (err) {
+        console.error('Error al obtener comentario:', err);
+        res.status(500).json({ error: 'Error al obtener el comentario' });
+    }
+});
+
+// Actualizar un comentario (solo autor puede)
+router.put('/comentario/:assetId/:comentarioId', auth, async (req, res) => {
+    try {
+        const { assetId, comentarioId } = req.params;
+        const { comentario, valoracion } = req.body;
+
+        const asset = await Asset.findById(assetId);
+        if (!asset) return res.status(404).json({ error: 'Asset no encontrado' });
+
+        const comentarioDoc = asset.comentarios.id(comentarioId);
+        if (!comentarioDoc) return res.status(404).json({ error: 'Comentario no encontrado' });
+
+        if (comentarioDoc.autor.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'No autorizado para modificar este comentario' });
+        }
+
+        if (comentario) comentarioDoc.comentario = comentario;
+        if (valoracion != null) comentarioDoc.valoracion = valoracion;
+
+        await asset.save();
+        await comentarioDoc.populate('autor', 'nombre').execPopulate();
+
+        res.status(200).json(comentarioDoc);
+    } catch (err) {
+        console.error('Error al actualizar comentario:', err);
+        res.status(500).json({ error: 'Error al actualizar el comentario' });
+    }
+});
+
+// Eliminar un comentario (solo autor puede)
+router.delete('/comentario/:assetId/:comentarioId', auth, async (req, res) => {
+    try {
+        const { assetId, comentarioId } = req.params;
+
+        const asset = await Asset.findById(assetId);
+        if (!asset) return res.status(404).json({ error: 'Asset no encontrado' });
+
+        const comentarioDoc = asset.comentarios.id(comentarioId);
+        if (!comentarioDoc) return res.status(404).json({ error: 'Comentario no encontrado' });
+
+        if (comentarioDoc.autor.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'No autorizado para borrar este comentario' });
+        }
+
+        comentarioDoc.remove();
+        await asset.save();
+
+        res.status(200).json({ resultado: 'Comentario eliminado correctamente' });
+    } catch (err) {
+        console.error('Error al eliminar comentario:', err);
+        res.status(500).json({ error: 'Error al eliminar el comentario' });
+    }
+});
+
 router.get('/:id', (req, res) => {
     Asset.findById(req.params['id']).populate('autor').then(x => {
         res.status(200).send({ resultado: x })
@@ -324,4 +454,5 @@ router.get('/', (req, res) => {
 
 
 });
+
 module.exports = router;

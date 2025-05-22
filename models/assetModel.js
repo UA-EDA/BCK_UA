@@ -1,29 +1,26 @@
 const mongoose = require('mongoose');
 
-const ComentarioSchema = require('./comentarioModel');
+const comentarioSchema = require('./comentarioModel');  // IMPORTAR schema, no modelo
 
 let AssetSchema = new mongoose.Schema({
     nombre: {
-        require: true,
+        required: true,
         type: String,
         trim: true
     },
-
     archivo: {
-        require: true,
+        required: true,
         type: String,
         trim: true
     },
-
     portada: {
-        require: true,
+        required: true,
         type: String,
         trim: true
     },
-
     categorias: {
         type: [String],
-        require: true,
+        required: true,
         validate: {
             validator: function (arr) {
                 return Array.isArray(arr) && arr.length > 0;
@@ -31,46 +28,37 @@ let AssetSchema = new mongoose.Schema({
             message: 'Debe contener al menos una categoría.'
         }
     },
-
     tipo: {
-        require: true,
+        required: true,
         type: String,
         enum: ['3D', '2D', 'AUDIO', 'VIDEO', 'SCRIPT', 'IMAGE'],
         default: 'USER'
     },
-
     fecha_alta: {
-        require: true,
+        required: true,
         type: Date
     },
-
     descripcion: {
-        require: true,
+        required: true,
         type: String
     },
-    
-
     autor: {
-        require: true,
+        required: true,
         type: mongoose.Schema.Types.ObjectId,
         ref: 'usuarios'
     },
-
     comentarios: {
-        require: false,
-        type: [ComentarioSchema]
+        type: [comentarioSchema],
+        default: []
     },
-
     likes: {
-        require: false,
-        type: Number
+        type: Number,
+        default: 0
     },
-    
     num_descargas: {
-        require: false,
-        type: Number
+        type: Number,
+        default: 0
     }
-
 });
 
 let Asset = mongoose.model('assets', AssetSchema);
