@@ -247,6 +247,46 @@ router.get('/filtro/:categoria', (req, res) => {
     }
 });
 
+router.get('/misAssets', auth, async (req, res) => {
+    console.log("HUH?" + req.user.id);
+    try {
+        const assets = await Asset.find({ autor: req.user.id }).populate('autor');
+        res.status(200).send({ resultado: assets });
+    } catch (err) {
+        console.error(err);
+        res.status(501).send({ error: err.message || "No se pudieron obtener los assets" });
+    }
+});
+
+router.post('/borrar-asset', auth, async (req, res) => {
+    try {
+        const assetId = req.body.id;
+
+        if (!assetId) {
+            return res.status(400).send({ error: 'Falta el id del asset' });
+        }
+
+        // Buscar el asset para comprobar que existe y que es del usuario
+        const asset = await Asset.findById(assetId);
+
+        if (!asset) {
+            return res.status(404).send({ error: 'Asset no encontrado' });
+        }
+
+        if (asset.autor.toString() !== req.user.id) {
+            return res.status(403).send({ error: 'No autorizado para borrar este asset' });
+        }
+
+        // Borrar asset
+        await Asset.findByIdAndDelete(assetId);
+
+        return res.status(200).send({ resultado: 'Asset borrado correctamente' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ error: err.message || 'Error al borrar el asset' });
+    }
+});
+
 router.get('/:id', (req, res) => {
     Asset.findById(req.params['id']).populate('autor').then(x => {
         res.status(200).send({ resultado: x })
@@ -284,6 +324,4 @@ router.get('/', (req, res) => {
 
 
 });
-
-
 module.exports = router;
