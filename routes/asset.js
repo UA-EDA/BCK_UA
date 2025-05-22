@@ -34,7 +34,7 @@ function auth(req, res, next) {
             return next();
         })
         .catch(response => {
-            res.status(response.status);
+            res.status(401);
             res.json({
                 result: 'KO',
                 message: response.message
