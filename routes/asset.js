@@ -42,6 +42,18 @@ function auth(req, res, next) {
         });
 }
 
+
+router.get('/mis-assets', auth, (req, res) => {
+    Asset.find({ autor: req.user.id}).populate('autor').then(x => {
+        res.send({ resultado: x });
+    }).catch(err => {
+        console.log(err);
+        res.status(500).send({
+            error: 'No se han podido obtener los datos'
+        });
+    });;
+});
+
 router.post('/subir', auth, async (req, res) => {
 
 
@@ -50,7 +62,7 @@ router.post('/subir', auth, async (req, res) => {
     pathFoto += upload.storage(req.body.asset, 'assets');
 
     let pathFotoPort = `https://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
-    console.log(req.user.id)
+    
 
     let newAsset = new Asset({
         nombre: req.body.nombre,
@@ -252,6 +264,7 @@ router.get('/', (req, res) => {
 
 
 });
+
 
 
 module.exports = router;
