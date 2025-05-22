@@ -45,11 +45,11 @@ function auth(req, res, next) {
 router.post('/subir', auth, async (req, res) => {
 
 
-    let pathFoto = `http://${req.hostname}/assets/`;
+    let pathFoto = `https://${req.hostname}/assets/`;
 
     pathFoto += upload.storage(req.body.asset, 'assets');
 
-    let pathFotoPort = `http://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
+    let pathFotoPort = `https://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
     console.log(req.user.id)
 
     let newAsset = new Asset({
@@ -217,7 +217,7 @@ router.get('/filtro/:categoria', (req, res) => {
 
 router.get('/:id', (req, res) => {
     Asset.findById(req.params['id']).populate('autor').then(x => {
-        res.status(200).send({ resultado: x })
+        res.status(200).send({ resultado: x });
 
     }).catch(err => {
         res.status(500).send({
