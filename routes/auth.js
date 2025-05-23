@@ -119,9 +119,11 @@ router.get('/me', auth, async (req, res) => {
             return res.status(404).send({ error: "Usuario no encontrado" });
         }
         res.status(200).send({
-            nombre_completo: user.nombre_completo,
-            email: user.email,
-            password: user.password
+            resultado: {
+                nombre_completo: user.nombre_completo,
+                email: user.email,
+                password: user.password
+            }
         });
     } catch (err) {
         res.status(500).send({ error: err.message || "Error al obtener el usuario" });
