@@ -264,9 +264,18 @@ router.get('/filtro/:categoria', (req, res) => {
 });
 
 router.get('/misAssets', auth, async (req, res) => {
-    console.log("HUH?" + req.user.id);
     try {
         const assets = await Asset.find({ autor: req.user.id }).populate('autor');
+        res.status(200).send({ resultado: assets });
+    } catch (err) {
+        console.error(err);
+        res.status(501).send({ error: err.message || "No se pudieron obtener los assets" });
+    }
+});
+
+router.get('/todos-assets', auth, async (req, res) => {
+    try {
+        const assets = await Asset.find();
         res.status(200).send({ resultado: assets });
     } catch (err) {
         console.error(err);
