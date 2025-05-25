@@ -275,7 +275,7 @@ router.get('/misAssets', auth, async (req, res) => {
 
 router.get('/todos-assets', auth, async (req, res) => {
     try {
-        const assets = await Asset.find();
+        const assets = await Asset.find().populate('autor');
         res.status(200).send({ resultado: assets });
     } catch (err) {
         console.error(err);
