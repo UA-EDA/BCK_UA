@@ -130,7 +130,7 @@ router.get('/me', auth, async (req, res) => {
     }
 });
 
-router.get('/dowload-list', auth, async (req, res) => {
+router.get('/download-list', auth, async (req, res) => {
     try {
         const user = await Usuario.findById(req.user.id);
 
