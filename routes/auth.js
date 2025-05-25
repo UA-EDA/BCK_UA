@@ -130,6 +130,23 @@ router.get('/me', auth, async (req, res) => {
     }
 });
 
+router.get('/dowload-list', auth, async (req, res) => {
+    try {
+        const user = await Usuario.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).send({ error: "Usuario no encontrado" });
+        }
+        res.status(200).send({
+            resultado: {
+                downloaded_assets: user.downloaded_assets,
+            }
+        });
+    } catch (err) {
+        res.status(500).send({ error: err.message || "Error al obtener el usuario" });
+    }
+});
+
 
 router.post('/validate/password', async (req, res) => {
     try {

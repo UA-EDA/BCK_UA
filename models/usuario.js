@@ -15,7 +15,6 @@ let UsuarioSchema = new mongoose.Schema({
         unique: true
     },
 
-
     password: {
         require: true,
         type: String,
@@ -35,7 +34,14 @@ let UsuarioSchema = new mongoose.Schema({
         enum: ['ADMIN', 'USER'],
         default: 'USER'
     },
+
     rated_assets: {
+        type: Map,
+        of: Boolean,
+        default: {}
+    },
+
+    downloaded_assets: {
         type: Map,
         of: Boolean,
         default: {}

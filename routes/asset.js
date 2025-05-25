@@ -76,6 +76,47 @@ router.post('/subir', auth, async (req, res) => {
 
 
 });
+router.put('/edit/:id', auth, async (req, res) => {
+    try {
+        const assetId = req.params.id;
+
+        // Fetch the existing asset
+        const asset = await Asset.findById(assetId);
+        if (!asset) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        // Optional: Check if the current user is the author
+        if (asset.autor.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        // Update fields
+        asset.nombre = req.body.nombre;
+        asset.descripcion = req.body.descripcion;
+        asset.categorias = req.body.categorias;
+        asset.tipo = req.body.tipo;
+        asset.fecha_alta = new Date(); // or leave unchanged depending on logic
+        if (typeof req.body.asset === 'string' && req.body.asset.trim() !== '') {
+            const pathFoto = `https://${req.hostname}/assets/${upload.storage(req.body.asset, 'assets')}`;
+            asset.archivo = pathFoto;
+        }
+
+        if (typeof req.body.portada === 'string' && req.body.portada.trim() !== '') {
+            const pathFotoPort = `https://${req.hostname}/portadas/${upload.storage(req.body.portada, 'portadas')}`;
+            asset.portada = pathFotoPort;
+        }
+
+
+        await asset.save();
+
+        res.status(200).json({ resultado: asset });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error updating asset' });
+    }
+});
+
 router.get('/like', auth, async (req, res) => {
     try {
         const { assetId } = req.query;
@@ -155,6 +196,10 @@ router.post('/like', auth, async (req, res) => {
 });
 
 router.post('/increment-download', auth, async (req, res) => {
+    await Usuario.findByIdAndUpdate(
+        req.user.id,
+        { $set: { [`downloaded_assets.${req.body.id}`]: true } }
+    );
     Asset.findByIdAndUpdate(
         req.body.id,
         { $inc: { num_descargas: 1 } },
@@ -180,36 +225,6 @@ router.get('/populares', (req, res) => {
         res.status(500).send({ error: 'Algo ha ido mal obteniendo los datos' });
     }
 });
-
-
-router.put('/:id', (req, res) => {
-
-    Asset.findByIdAndUpdate(req.params['id'], {
-        $set: {
-            nombre: req.body.nombre,
-            archivo: pathFoto,
-            descripcion: req.body.descripcion,
-            categorias: req.body.categorias,
-            tipo: req.body.tipo,
-            fecha_alta: new Date(),
-            autor: new mongoose.Types.ObjectId(req.body.autor)
-
-
-        }
-    }, {
-        new: true
-    }).then(x => {
-        res.status(200).send({
-            resultado: x
-        });
-
-    }).catch(() => {
-        res.status(500).send({
-            error: "No se ha encontrado al equipo"
-        });
-    });
-});
-
 
 router.get('/filtro/:categoria', (req, res) => {
 
